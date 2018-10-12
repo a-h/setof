@@ -9,668 +9,224 @@ import (
 	"sync/atomic"
 )
 
-// NewStringToString creates a new map of string to String.
-func NewStringToString() *StringToString {
-	return &StringToString{
-		mapKeysToIndex: make(map[string]*indexToStringWithValueString),
+// Strings creates a new set of Strings.
+func Strings(values ...string) *StringSet {
+	ss := &StringSet{
+		mapKeysToIndex: make(map[string]int64),
 	}
+	for _, v := range values {
+		ss.Add(v)
+	}
+	return ss
 }
 
-// StringToString is a map of string to string which retains the order of the keys.
-type StringToString struct {
-	mapKeysToIndex map[string]*indexToStringWithValueString
+// StringSet is a set of Strings which retains the order that the keys were added.
+type StringSet struct {
+	mapKeysToIndex map[string]int64
 	index          int64
 }
 
 // Add an item to the set.
-func (ss *StringToString) Add(k string, v string) {
-	if kv, ok := ss.mapKeysToIndex[k]; ok {
-		kv.value = v
+func (s *StringSet) Add(v string) {
+	if _, ok := s.mapKeysToIndex[v]; ok {
 		return
 	}
-	ss.mapKeysToIndex[k] = &indexToStringWithValueString{
-		index: atomic.AddInt64(&ss.index, 1),
-		key:   k,
-		value: v,
-	}
+	s.mapKeysToIndex[v] = atomic.AddInt64(&s.index, 1)
 }
 
-// Get an item from the set.
-func (ss *StringToString) Get(k string) (v string, ok bool) {
-	kv, ok := ss.mapKeysToIndex[k]
-	v = kv.value
+// Contains determines whether an item is in the set.
+func (s *StringSet) Contains(v string) (ok bool) {
+	_, ok = s.mapKeysToIndex[v]
 	return
 }
 
 // Del deletes an item from the set.
-func (ss *StringToString) Del(k string) {
-	delete(ss.mapKeysToIndex, k)
+func (s *StringSet) Del(v string) {
+	delete(s.mapKeysToIndex, v)
 }
 
-// Keys returns all of the keys within the set.
-func (ss *StringToString) Keys() (keys []string) {
-	kvs := make(indexToStringWithValueStrings, len(ss.mapKeysToIndex))
+// Values returns all of the values within the set.
+func (s *StringSet) Values() (v []string) {
+	values := make(indexToStringValues, len(s.mapKeysToIndex))
 	var index int
-	for _, kv := range ss.mapKeysToIndex {
-		kvs[index] = *kv
+	for k, v := range s.mapKeysToIndex {
+		values[index] = indexToStringValue{
+			index: v,
+			value: k,
+		}
 		index++
 	}
-	sort.Sort(kvs)
-	keys = make([]string, len(ss.mapKeysToIndex))
-	for i, v := range kvs {
-		keys[i] = v.key
+	sort.Sort(values)
+	v = make([]string, len(s.mapKeysToIndex))
+	for i, vv := range values {
+		v[i] = vv.value
 	}
-	return keys
+	return
 }
 
-type indexToStringWithValueString struct {
+type indexToStringValue struct {
 	index int64
-	key   string
 	value string
 }
 
-type indexToStringWithValueStrings []indexToStringWithValueString
+type indexToStringValues []indexToStringValue
 
-func (d indexToStringWithValueStrings) Len() int {
+func (d indexToStringValues) Len() int {
 	return len(d)
 }
 
-func (d indexToStringWithValueStrings) Swap(i, j int) {
+func (d indexToStringValues) Swap(i, j int) {
 	d[i], d[j] = d[j], d[i]
 }
 
-func (d indexToStringWithValueStrings) Less(i, j int) bool {
+func (d indexToStringValues) Less(i, j int) bool {
 	return d[i].index < d[j].index
 }
 
-// NewStringToInt creates a new map of string to Int.
-func NewStringToInt() *StringToInt {
-	return &StringToInt{
-		mapKeysToIndex: make(map[string]*indexToStringWithValueInt),
+// Ints creates a new set of Ints.
+func Ints(values ...int) *IntSet {
+	ss := &IntSet{
+		mapKeysToIndex: make(map[int]int64),
 	}
+	for _, v := range values {
+		ss.Add(v)
+	}
+	return ss
 }
 
-// StringToInt is a map of string to int which retains the order of the keys.
-type StringToInt struct {
-	mapKeysToIndex map[string]*indexToStringWithValueInt
+// IntSet is a set of Ints which retains the order that the keys were added.
+type IntSet struct {
+	mapKeysToIndex map[int]int64
 	index          int64
 }
 
 // Add an item to the set.
-func (ss *StringToInt) Add(k string, v int) {
-	if kv, ok := ss.mapKeysToIndex[k]; ok {
-		kv.value = v
+func (s *IntSet) Add(v int) {
+	if _, ok := s.mapKeysToIndex[v]; ok {
 		return
 	}
-	ss.mapKeysToIndex[k] = &indexToStringWithValueInt{
-		index: atomic.AddInt64(&ss.index, 1),
-		key:   k,
-		value: v,
-	}
+	s.mapKeysToIndex[v] = atomic.AddInt64(&s.index, 1)
 }
 
-// Get an item from the set.
-func (ss *StringToInt) Get(k string) (v int, ok bool) {
-	kv, ok := ss.mapKeysToIndex[k]
-	v = kv.value
+// Contains determines whether an item is in the set.
+func (s *IntSet) Contains(v int) (ok bool) {
+	_, ok = s.mapKeysToIndex[v]
 	return
 }
 
 // Del deletes an item from the set.
-func (ss *StringToInt) Del(k string) {
-	delete(ss.mapKeysToIndex, k)
+func (s *IntSet) Del(v int) {
+	delete(s.mapKeysToIndex, v)
 }
 
-// Keys returns all of the keys within the set.
-func (ss *StringToInt) Keys() (keys []string) {
-	kvs := make(indexToStringWithValueInts, len(ss.mapKeysToIndex))
+// Values returns all of the values within the set.
+func (s *IntSet) Values() (v []int) {
+	values := make(indexToIntValues, len(s.mapKeysToIndex))
 	var index int
-	for _, kv := range ss.mapKeysToIndex {
-		kvs[index] = *kv
+	for k, v := range s.mapKeysToIndex {
+		values[index] = indexToIntValue{
+			index: v,
+			value: k,
+		}
 		index++
 	}
-	sort.Sort(kvs)
-	keys = make([]string, len(ss.mapKeysToIndex))
-	for i, v := range kvs {
-		keys[i] = v.key
+	sort.Sort(values)
+	v = make([]int, len(s.mapKeysToIndex))
+	for i, vv := range values {
+		v[i] = vv.value
 	}
-	return keys
+	return
 }
 
-type indexToStringWithValueInt struct {
+type indexToIntValue struct {
 	index int64
-	key   string
 	value int
 }
 
-type indexToStringWithValueInts []indexToStringWithValueInt
+type indexToIntValues []indexToIntValue
 
-func (d indexToStringWithValueInts) Len() int {
+func (d indexToIntValues) Len() int {
 	return len(d)
 }
 
-func (d indexToStringWithValueInts) Swap(i, j int) {
+func (d indexToIntValues) Swap(i, j int) {
 	d[i], d[j] = d[j], d[i]
 }
 
-func (d indexToStringWithValueInts) Less(i, j int) bool {
+func (d indexToIntValues) Less(i, j int) bool {
 	return d[i].index < d[j].index
 }
 
-// NewStringToInt64 creates a new map of string to Int64.
-func NewStringToInt64() *StringToInt64 {
-	return &StringToInt64{
-		mapKeysToIndex: make(map[string]*indexToStringWithValueInt64),
+// Int64s creates a new set of Int64s.
+func Int64s(values ...int64) *Int64Set {
+	ss := &Int64Set{
+		mapKeysToIndex: make(map[int64]int64),
 	}
+	for _, v := range values {
+		ss.Add(v)
+	}
+	return ss
 }
 
-// StringToInt64 is a map of string to int64 which retains the order of the keys.
-type StringToInt64 struct {
-	mapKeysToIndex map[string]*indexToStringWithValueInt64
+// Int64Set is a set of Int64s which retains the order that the keys were added.
+type Int64Set struct {
+	mapKeysToIndex map[int64]int64
 	index          int64
 }
 
 // Add an item to the set.
-func (ss *StringToInt64) Add(k string, v int64) {
-	if kv, ok := ss.mapKeysToIndex[k]; ok {
-		kv.value = v
+func (s *Int64Set) Add(v int64) {
+	if _, ok := s.mapKeysToIndex[v]; ok {
 		return
 	}
-	ss.mapKeysToIndex[k] = &indexToStringWithValueInt64{
-		index: atomic.AddInt64(&ss.index, 1),
-		key:   k,
-		value: v,
-	}
+	s.mapKeysToIndex[v] = atomic.AddInt64(&s.index, 1)
 }
 
-// Get an item from the set.
-func (ss *StringToInt64) Get(k string) (v int64, ok bool) {
-	kv, ok := ss.mapKeysToIndex[k]
-	v = kv.value
+// Contains determines whether an item is in the set.
+func (s *Int64Set) Contains(v int64) (ok bool) {
+	_, ok = s.mapKeysToIndex[v]
 	return
 }
 
 // Del deletes an item from the set.
-func (ss *StringToInt64) Del(k string) {
-	delete(ss.mapKeysToIndex, k)
+func (s *Int64Set) Del(v int64) {
+	delete(s.mapKeysToIndex, v)
 }
 
-// Keys returns all of the keys within the set.
-func (ss *StringToInt64) Keys() (keys []string) {
-	kvs := make(indexToStringWithValueInt64s, len(ss.mapKeysToIndex))
+// Values returns all of the values within the set.
+func (s *Int64Set) Values() (v []int64) {
+	values := make(indexToInt64Values, len(s.mapKeysToIndex))
 	var index int
-	for _, kv := range ss.mapKeysToIndex {
-		kvs[index] = *kv
+	for k, v := range s.mapKeysToIndex {
+		values[index] = indexToInt64Value{
+			index: v,
+			value: k,
+		}
 		index++
 	}
-	sort.Sort(kvs)
-	keys = make([]string, len(ss.mapKeysToIndex))
-	for i, v := range kvs {
-		keys[i] = v.key
+	sort.Sort(values)
+	v = make([]int64, len(s.mapKeysToIndex))
+	for i, vv := range values {
+		v[i] = vv.value
 	}
-	return keys
+	return
 }
 
-type indexToStringWithValueInt64 struct {
+type indexToInt64Value struct {
 	index int64
-	key   string
 	value int64
 }
 
-type indexToStringWithValueInt64s []indexToStringWithValueInt64
+type indexToInt64Values []indexToInt64Value
 
-func (d indexToStringWithValueInt64s) Len() int {
+func (d indexToInt64Values) Len() int {
 	return len(d)
 }
 
-func (d indexToStringWithValueInt64s) Swap(i, j int) {
+func (d indexToInt64Values) Swap(i, j int) {
 	d[i], d[j] = d[j], d[i]
 }
 
-func (d indexToStringWithValueInt64s) Less(i, j int) bool {
-	return d[i].index < d[j].index
-}
-
-// NewIntToString creates a new map of int to String.
-func NewIntToString() *IntToString {
-	return &IntToString{
-		mapKeysToIndex: make(map[int]*indexToIntWithValueString),
-	}
-}
-
-// IntToString is a map of int to string which retains the order of the keys.
-type IntToString struct {
-	mapKeysToIndex map[int]*indexToIntWithValueString
-	index          int64
-}
-
-// Add an item to the set.
-func (ss *IntToString) Add(k int, v string) {
-	if kv, ok := ss.mapKeysToIndex[k]; ok {
-		kv.value = v
-		return
-	}
-	ss.mapKeysToIndex[k] = &indexToIntWithValueString{
-		index: atomic.AddInt64(&ss.index, 1),
-		key:   k,
-		value: v,
-	}
-}
-
-// Get an item from the set.
-func (ss *IntToString) Get(k int) (v string, ok bool) {
-	kv, ok := ss.mapKeysToIndex[k]
-	v = kv.value
-	return
-}
-
-// Del deletes an item from the set.
-func (ss *IntToString) Del(k int) {
-	delete(ss.mapKeysToIndex, k)
-}
-
-// Keys returns all of the keys within the set.
-func (ss *IntToString) Keys() (keys []int) {
-	kvs := make(indexToIntWithValueStrings, len(ss.mapKeysToIndex))
-	var index int
-	for _, kv := range ss.mapKeysToIndex {
-		kvs[index] = *kv
-		index++
-	}
-	sort.Sort(kvs)
-	keys = make([]int, len(ss.mapKeysToIndex))
-	for i, v := range kvs {
-		keys[i] = v.key
-	}
-	return keys
-}
-
-type indexToIntWithValueString struct {
-	index int64
-	key   int
-	value string
-}
-
-type indexToIntWithValueStrings []indexToIntWithValueString
-
-func (d indexToIntWithValueStrings) Len() int {
-	return len(d)
-}
-
-func (d indexToIntWithValueStrings) Swap(i, j int) {
-	d[i], d[j] = d[j], d[i]
-}
-
-func (d indexToIntWithValueStrings) Less(i, j int) bool {
-	return d[i].index < d[j].index
-}
-
-// NewIntToInt creates a new map of int to Int.
-func NewIntToInt() *IntToInt {
-	return &IntToInt{
-		mapKeysToIndex: make(map[int]*indexToIntWithValueInt),
-	}
-}
-
-// IntToInt is a map of int to int which retains the order of the keys.
-type IntToInt struct {
-	mapKeysToIndex map[int]*indexToIntWithValueInt
-	index          int64
-}
-
-// Add an item to the set.
-func (ss *IntToInt) Add(k int, v int) {
-	if kv, ok := ss.mapKeysToIndex[k]; ok {
-		kv.value = v
-		return
-	}
-	ss.mapKeysToIndex[k] = &indexToIntWithValueInt{
-		index: atomic.AddInt64(&ss.index, 1),
-		key:   k,
-		value: v,
-	}
-}
-
-// Get an item from the set.
-func (ss *IntToInt) Get(k int) (v int, ok bool) {
-	kv, ok := ss.mapKeysToIndex[k]
-	v = kv.value
-	return
-}
-
-// Del deletes an item from the set.
-func (ss *IntToInt) Del(k int) {
-	delete(ss.mapKeysToIndex, k)
-}
-
-// Keys returns all of the keys within the set.
-func (ss *IntToInt) Keys() (keys []int) {
-	kvs := make(indexToIntWithValueInts, len(ss.mapKeysToIndex))
-	var index int
-	for _, kv := range ss.mapKeysToIndex {
-		kvs[index] = *kv
-		index++
-	}
-	sort.Sort(kvs)
-	keys = make([]int, len(ss.mapKeysToIndex))
-	for i, v := range kvs {
-		keys[i] = v.key
-	}
-	return keys
-}
-
-type indexToIntWithValueInt struct {
-	index int64
-	key   int
-	value int
-}
-
-type indexToIntWithValueInts []indexToIntWithValueInt
-
-func (d indexToIntWithValueInts) Len() int {
-	return len(d)
-}
-
-func (d indexToIntWithValueInts) Swap(i, j int) {
-	d[i], d[j] = d[j], d[i]
-}
-
-func (d indexToIntWithValueInts) Less(i, j int) bool {
-	return d[i].index < d[j].index
-}
-
-// NewIntToInt64 creates a new map of int to Int64.
-func NewIntToInt64() *IntToInt64 {
-	return &IntToInt64{
-		mapKeysToIndex: make(map[int]*indexToIntWithValueInt64),
-	}
-}
-
-// IntToInt64 is a map of int to int64 which retains the order of the keys.
-type IntToInt64 struct {
-	mapKeysToIndex map[int]*indexToIntWithValueInt64
-	index          int64
-}
-
-// Add an item to the set.
-func (ss *IntToInt64) Add(k int, v int64) {
-	if kv, ok := ss.mapKeysToIndex[k]; ok {
-		kv.value = v
-		return
-	}
-	ss.mapKeysToIndex[k] = &indexToIntWithValueInt64{
-		index: atomic.AddInt64(&ss.index, 1),
-		key:   k,
-		value: v,
-	}
-}
-
-// Get an item from the set.
-func (ss *IntToInt64) Get(k int) (v int64, ok bool) {
-	kv, ok := ss.mapKeysToIndex[k]
-	v = kv.value
-	return
-}
-
-// Del deletes an item from the set.
-func (ss *IntToInt64) Del(k int) {
-	delete(ss.mapKeysToIndex, k)
-}
-
-// Keys returns all of the keys within the set.
-func (ss *IntToInt64) Keys() (keys []int) {
-	kvs := make(indexToIntWithValueInt64s, len(ss.mapKeysToIndex))
-	var index int
-	for _, kv := range ss.mapKeysToIndex {
-		kvs[index] = *kv
-		index++
-	}
-	sort.Sort(kvs)
-	keys = make([]int, len(ss.mapKeysToIndex))
-	for i, v := range kvs {
-		keys[i] = v.key
-	}
-	return keys
-}
-
-type indexToIntWithValueInt64 struct {
-	index int64
-	key   int
-	value int64
-}
-
-type indexToIntWithValueInt64s []indexToIntWithValueInt64
-
-func (d indexToIntWithValueInt64s) Len() int {
-	return len(d)
-}
-
-func (d indexToIntWithValueInt64s) Swap(i, j int) {
-	d[i], d[j] = d[j], d[i]
-}
-
-func (d indexToIntWithValueInt64s) Less(i, j int) bool {
-	return d[i].index < d[j].index
-}
-
-// NewInt64ToString creates a new map of int64 to String.
-func NewInt64ToString() *Int64ToString {
-	return &Int64ToString{
-		mapKeysToIndex: make(map[int64]*indexToInt64WithValueString),
-	}
-}
-
-// Int64ToString is a map of int64 to string which retains the order of the keys.
-type Int64ToString struct {
-	mapKeysToIndex map[int64]*indexToInt64WithValueString
-	index          int64
-}
-
-// Add an item to the set.
-func (ss *Int64ToString) Add(k int64, v string) {
-	if kv, ok := ss.mapKeysToIndex[k]; ok {
-		kv.value = v
-		return
-	}
-	ss.mapKeysToIndex[k] = &indexToInt64WithValueString{
-		index: atomic.AddInt64(&ss.index, 1),
-		key:   k,
-		value: v,
-	}
-}
-
-// Get an item from the set.
-func (ss *Int64ToString) Get(k int64) (v string, ok bool) {
-	kv, ok := ss.mapKeysToIndex[k]
-	v = kv.value
-	return
-}
-
-// Del deletes an item from the set.
-func (ss *Int64ToString) Del(k int64) {
-	delete(ss.mapKeysToIndex, k)
-}
-
-// Keys returns all of the keys within the set.
-func (ss *Int64ToString) Keys() (keys []int64) {
-	kvs := make(indexToInt64WithValueStrings, len(ss.mapKeysToIndex))
-	var index int
-	for _, kv := range ss.mapKeysToIndex {
-		kvs[index] = *kv
-		index++
-	}
-	sort.Sort(kvs)
-	keys = make([]int64, len(ss.mapKeysToIndex))
-	for i, v := range kvs {
-		keys[i] = v.key
-	}
-	return keys
-}
-
-type indexToInt64WithValueString struct {
-	index int64
-	key   int64
-	value string
-}
-
-type indexToInt64WithValueStrings []indexToInt64WithValueString
-
-func (d indexToInt64WithValueStrings) Len() int {
-	return len(d)
-}
-
-func (d indexToInt64WithValueStrings) Swap(i, j int) {
-	d[i], d[j] = d[j], d[i]
-}
-
-func (d indexToInt64WithValueStrings) Less(i, j int) bool {
-	return d[i].index < d[j].index
-}
-
-// NewInt64ToInt creates a new map of int64 to Int.
-func NewInt64ToInt() *Int64ToInt {
-	return &Int64ToInt{
-		mapKeysToIndex: make(map[int64]*indexToInt64WithValueInt),
-	}
-}
-
-// Int64ToInt is a map of int64 to int which retains the order of the keys.
-type Int64ToInt struct {
-	mapKeysToIndex map[int64]*indexToInt64WithValueInt
-	index          int64
-}
-
-// Add an item to the set.
-func (ss *Int64ToInt) Add(k int64, v int) {
-	if kv, ok := ss.mapKeysToIndex[k]; ok {
-		kv.value = v
-		return
-	}
-	ss.mapKeysToIndex[k] = &indexToInt64WithValueInt{
-		index: atomic.AddInt64(&ss.index, 1),
-		key:   k,
-		value: v,
-	}
-}
-
-// Get an item from the set.
-func (ss *Int64ToInt) Get(k int64) (v int, ok bool) {
-	kv, ok := ss.mapKeysToIndex[k]
-	v = kv.value
-	return
-}
-
-// Del deletes an item from the set.
-func (ss *Int64ToInt) Del(k int64) {
-	delete(ss.mapKeysToIndex, k)
-}
-
-// Keys returns all of the keys within the set.
-func (ss *Int64ToInt) Keys() (keys []int64) {
-	kvs := make(indexToInt64WithValueInts, len(ss.mapKeysToIndex))
-	var index int
-	for _, kv := range ss.mapKeysToIndex {
-		kvs[index] = *kv
-		index++
-	}
-	sort.Sort(kvs)
-	keys = make([]int64, len(ss.mapKeysToIndex))
-	for i, v := range kvs {
-		keys[i] = v.key
-	}
-	return keys
-}
-
-type indexToInt64WithValueInt struct {
-	index int64
-	key   int64
-	value int
-}
-
-type indexToInt64WithValueInts []indexToInt64WithValueInt
-
-func (d indexToInt64WithValueInts) Len() int {
-	return len(d)
-}
-
-func (d indexToInt64WithValueInts) Swap(i, j int) {
-	d[i], d[j] = d[j], d[i]
-}
-
-func (d indexToInt64WithValueInts) Less(i, j int) bool {
-	return d[i].index < d[j].index
-}
-
-// NewInt64ToInt64 creates a new map of int64 to Int64.
-func NewInt64ToInt64() *Int64ToInt64 {
-	return &Int64ToInt64{
-		mapKeysToIndex: make(map[int64]*indexToInt64WithValueInt64),
-	}
-}
-
-// Int64ToInt64 is a map of int64 to int64 which retains the order of the keys.
-type Int64ToInt64 struct {
-	mapKeysToIndex map[int64]*indexToInt64WithValueInt64
-	index          int64
-}
-
-// Add an item to the set.
-func (ss *Int64ToInt64) Add(k int64, v int64) {
-	if kv, ok := ss.mapKeysToIndex[k]; ok {
-		kv.value = v
-		return
-	}
-	ss.mapKeysToIndex[k] = &indexToInt64WithValueInt64{
-		index: atomic.AddInt64(&ss.index, 1),
-		key:   k,
-		value: v,
-	}
-}
-
-// Get an item from the set.
-func (ss *Int64ToInt64) Get(k int64) (v int64, ok bool) {
-	kv, ok := ss.mapKeysToIndex[k]
-	v = kv.value
-	return
-}
-
-// Del deletes an item from the set.
-func (ss *Int64ToInt64) Del(k int64) {
-	delete(ss.mapKeysToIndex, k)
-}
-
-// Keys returns all of the keys within the set.
-func (ss *Int64ToInt64) Keys() (keys []int64) {
-	kvs := make(indexToInt64WithValueInt64s, len(ss.mapKeysToIndex))
-	var index int
-	for _, kv := range ss.mapKeysToIndex {
-		kvs[index] = *kv
-		index++
-	}
-	sort.Sort(kvs)
-	keys = make([]int64, len(ss.mapKeysToIndex))
-	for i, v := range kvs {
-		keys[i] = v.key
-	}
-	return keys
-}
-
-type indexToInt64WithValueInt64 struct {
-	index int64
-	key   int64
-	value int64
-}
-
-type indexToInt64WithValueInt64s []indexToInt64WithValueInt64
-
-func (d indexToInt64WithValueInt64s) Len() int {
-	return len(d)
-}
-
-func (d indexToInt64WithValueInt64s) Swap(i, j int) {
-	d[i], d[j] = d[j], d[i]
-}
-
-func (d indexToInt64WithValueInt64s) Less(i, j int) bool {
+func (d indexToInt64Values) Less(i, j int) bool {
 	return d[i].index < d[j].index
 }

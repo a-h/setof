@@ -1,6 +1,6 @@
 package setof
 
-//go:generate genny -in=$GOFILE -out=gen-$GOFILE gen "KeyType=string,int,int64 ValueType=string,int,int64"
+//go:generate genny -in=$GOFILE -out=gen-$GOFILE gen "SetType=string,int,int64"
 
 import (
 	"sort"
@@ -9,82 +9,79 @@ import (
 	"github.com/cheekybits/genny/generic"
 )
 
-// KeyType of the set.
-type KeyType generic.Type
+// SetType of the set.
+type SetType generic.Type
 
-// ValueType of the set.
-type ValueType generic.Type
-
-// NewKeyTypeToValueType creates a new map of KeyType to ValueType.
-func NewKeyTypeToValueType() *KeyTypeToValueType {
-	return &KeyTypeToValueType{
-		mapKeysToIndex: make(map[KeyType]*indexToKeyTypeWithValueValueType),
+// SetTypes creates a new set of SetTypes.
+func SetTypes(values ...SetType) *SetTypeSet {
+	ss := &SetTypeSet{
+		mapKeysToIndex: make(map[SetType]int64),
 	}
+	for _, v := range values {
+		ss.Add(v)
+	}
+	return ss
 }
 
-// KeyTypeToValueType is a map of KeyType to ValueType which retains the order of the keys.
-type KeyTypeToValueType struct {
-	mapKeysToIndex map[KeyType]*indexToKeyTypeWithValueValueType
+// SetTypeSet is a set of SetTypes which retains the order that the keys were added.
+type SetTypeSet struct {
+	mapKeysToIndex map[SetType]int64
 	index          int64
 }
 
 // Add an item to the set.
-func (ss *KeyTypeToValueType) Add(k KeyType, v ValueType) {
-	if kv, ok := ss.mapKeysToIndex[k]; ok {
-		kv.value = v
+func (s *SetTypeSet) Add(v SetType) {
+	if _, ok := s.mapKeysToIndex[v]; ok {
 		return
 	}
-	ss.mapKeysToIndex[k] = &indexToKeyTypeWithValueValueType{
-		index: atomic.AddInt64(&ss.index, 1),
-		key:   k,
-		value: v,
-	}
+	s.mapKeysToIndex[v] = atomic.AddInt64(&s.index, 1)
 }
 
-// Get an item from the set.
-func (ss *KeyTypeToValueType) Get(k KeyType) (v ValueType, ok bool) {
-	kv, ok := ss.mapKeysToIndex[k]
-	v = kv.value
+// Contains determines whether an item is in the set.
+func (s *SetTypeSet) Contains(v SetType) (ok bool) {
+	_, ok = s.mapKeysToIndex[v]
 	return
 }
 
 // Del deletes an item from the set.
-func (ss *KeyTypeToValueType) Del(k KeyType) {
-	delete(ss.mapKeysToIndex, k)
+func (s *SetTypeSet) Del(v SetType) {
+	delete(s.mapKeysToIndex, v)
 }
 
-// Keys returns all of the keys within the set.
-func (ss *KeyTypeToValueType) Keys() (keys []KeyType) {
-	kvs := make(indexToKeyTypeWithValueValueTypes, len(ss.mapKeysToIndex))
+// Values returns all of the values within the set.
+func (s *SetTypeSet) Values() (v []SetType) {
+	values := make(indexToSetTypeValues, len(s.mapKeysToIndex))
 	var index int
-	for _, kv := range ss.mapKeysToIndex {
-		kvs[index] = *kv
+	for k, v := range s.mapKeysToIndex {
+		values[index] = indexToSetTypeValue{
+			index: v,
+			value: k,
+		}
 		index++
 	}
-	sort.Sort(kvs)
-	keys = make([]KeyType, len(ss.mapKeysToIndex))
-	for i, v := range kvs {
-		keys[i] = v.key
+	sort.Sort(values)
+	v = make([]SetType, len(s.mapKeysToIndex))
+	for i, vv := range values {
+		v[i] = vv.value
 	}
-	return keys
+	return
 }
 
-type indexToKeyTypeWithValueValueType struct {
+type indexToSetTypeValue struct {
 	index int64
-	key   KeyType
-	value ValueType
+	value SetType
 }
 
-type indexToKeyTypeWithValueValueTypes []indexToKeyTypeWithValueValueType
+type indexToSetTypeValues []indexToSetTypeValue
 
-func (d indexToKeyTypeWithValueValueTypes) Len() int {
+func (d indexToSetTypeValues) Len() int {
 	return len(d)
 }
 
-func (d indexToKeyTypeWithValueValueTypes) Swap(i, j int) {
+func (d indexToSetTypeValues) Swap(i, j int) {
 	d[i], d[j] = d[j], d[i]
 }
 
-func (d indexToKeyTypeWithValueValueTypes) Less(i, j int) bool {
+func (d indexToSetTypeValues) Less(i, j int) bool {
 	return d[i].index < d[j].index
 }
