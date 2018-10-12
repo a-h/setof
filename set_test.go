@@ -6,9 +6,20 @@ import (
 )
 
 func TestSet(t *testing.T) {
-	set := Strings("a", "b", "c", "a")
+	set := NewStringToString()
+	set.Add("a", "a")
+	set.Add("b", "b")
+	set.Add("c", "c")
 	if !reflect.DeepEqual(set.Keys(), []string{"a", "b", "c"}) {
 		t.Errorf("Expected set to only contain a, b, c, got %v", set.Keys())
+	}
+	set.Add("a", "aa")
+	aa, ok := set.Get("a")
+	if !ok {
+		t.Errorf("Expected to be able to get the value 'aa', but couldn't")
+	}
+	if aa != "aa" {
+		t.Errorf("Expected to get value 'aa' but got '%v'", aa)
 	}
 	set.Del("c")
 	if !reflect.DeepEqual(set.Keys(), []string{"a", "b"}) {
