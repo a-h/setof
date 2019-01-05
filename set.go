@@ -3,6 +3,7 @@ package setof
 //go:generate genny -in=$GOFILE -out=gen-$GOFILE gen "SetType=string,int,int64"
 
 import (
+	"encoding/json"
 	"sort"
 	"sync/atomic"
 
@@ -84,4 +85,20 @@ func (d indexToSetTypeValues) Swap(i, j int) {
 
 func (d indexToSetTypeValues) Less(i, j int) bool {
 	return d[i].index < d[j].index
+}
+
+// MarshalJSON marshals to JSON.
+func (s *SetTypeSet) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.Values())
+}
+
+// UnmarshalJSON marshals from JSON.
+func (s *SetTypeSet) UnmarshalJSON(data []byte) error {
+	var a []SetType
+	err := json.Unmarshal(data, &a)
+	if err != nil {
+		return err
+	}
+	(*s) = (*SetTypes(a...))
+	return nil
 }

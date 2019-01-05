@@ -5,6 +5,7 @@
 package setof
 
 import (
+	"encoding/json"
 	"sort"
 	"sync/atomic"
 )
@@ -83,6 +84,22 @@ func (d indexToStringValues) Less(i, j int) bool {
 	return d[i].index < d[j].index
 }
 
+// MarshalJSON marshals to JSON.
+func (s *StringSet) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.Values())
+}
+
+// UnmarshalJSON marshals from JSON.
+func (s *StringSet) UnmarshalJSON(data []byte) error {
+	var a []string
+	err := json.Unmarshal(data, &a)
+	if err != nil {
+		return err
+	}
+	(*s) = (*Strings(a...))
+	return nil
+}
+
 // Ints creates a new set of Ints.
 func Ints(values ...int) *IntSet {
 	ss := &IntSet{
@@ -157,6 +174,22 @@ func (d indexToIntValues) Less(i, j int) bool {
 	return d[i].index < d[j].index
 }
 
+// MarshalJSON marshals to JSON.
+func (s *IntSet) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.Values())
+}
+
+// UnmarshalJSON marshals from JSON.
+func (s *IntSet) UnmarshalJSON(data []byte) error {
+	var a []int
+	err := json.Unmarshal(data, &a)
+	if err != nil {
+		return err
+	}
+	(*s) = (*Ints(a...))
+	return nil
+}
+
 // Int64s creates a new set of Int64s.
 func Int64s(values ...int64) *Int64Set {
 	ss := &Int64Set{
@@ -229,4 +262,20 @@ func (d indexToInt64Values) Swap(i, j int) {
 
 func (d indexToInt64Values) Less(i, j int) bool {
 	return d[i].index < d[j].index
+}
+
+// MarshalJSON marshals to JSON.
+func (s *Int64Set) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.Values())
+}
+
+// UnmarshalJSON marshals from JSON.
+func (s *Int64Set) UnmarshalJSON(data []byte) error {
+	var a []int64
+	err := json.Unmarshal(data, &a)
+	if err != nil {
+		return err
+	}
+	(*s) = (*Int64s(a...))
+	return nil
 }
